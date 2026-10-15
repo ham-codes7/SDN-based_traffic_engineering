@@ -20,9 +20,10 @@ MODELS_DIR = REPO_ROOT / "models"
 ALGOS = {"ppo": PPO, "a2c": A2C}
 HYPERPARAMS = {
     # gamma is low because a routing decision mostly affects the current interval.
+    # log_std_init=-1 starts exploration near equal weights (= OSPF) instead of random routing.
     "ppo": dict(n_steps=512, batch_size=256, n_epochs=10, learning_rate=3e-4, gamma=0.9,
-                policy_kwargs=dict(net_arch=[128, 128])),
-    "a2c": dict(n_steps=8, learning_rate=7e-4, gamma=0.9, policy_kwargs=dict(net_arch=[128, 128])),
+                policy_kwargs=dict(net_arch=[128, 128], log_std_init=-1.0)),
+    "a2c": dict(n_steps=8, learning_rate=7e-4, gamma=0.9, policy_kwargs=dict(net_arch=[128, 128], log_std_init=-1.0)),
 }
 
 
