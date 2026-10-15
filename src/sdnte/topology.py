@@ -38,6 +38,7 @@ class Topology:
         self.capacities = np.array([l.capacity for l in self.links], dtype=float)
         self.delays = np.array([l.delay for l in self.links], dtype=float)
         self.up = np.ones(len(self.links), dtype=bool)
+        self.positions: dict[int, tuple[float, float]] | None = None  # optional drawing layout
 
     @classmethod
     def load(cls, name_or_path: str | Path) -> Topology:
@@ -53,7 +54,10 @@ class Topology:
             u, v = idx[e["src"]], idx[e["dst"]]
             for a, b in ((u, v), (v, u)):
                 links.append(Link(a, b, float(e["capacity"]), float(e.get("delay", 1.0))))
-        return cls(data["name"], names, links)
+        topo = cls(data["name"], names, links)
+        if "positions" in data:
+            topo.positions = {idx[n]: tuple(xy) for n, xy in data["positions"].items()}
+        return topo
 
     @staticmethod
     def available() -> list[str]:

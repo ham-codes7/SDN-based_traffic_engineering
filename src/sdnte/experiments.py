@@ -58,7 +58,8 @@ def run_all(
 
     Writes:
       results/episodes.csv       one row per (condition, method, scenario): episode means
-      results/failure_steps.csv  per-step metrics for the failure runs
+      results/failure_steps.csv  per-step metrics at the failure loads, with and without
+                                 the failure (column `scenario`)
     `quick` uses 2 seeds and 20-step episodes, for checking the pipeline.
     """
     from sdnte.routing import available_methods, make_te_app
@@ -87,19 +88,23 @@ def run_all(
                 for seed in seeds:
                     tm_seq = generate_sequence(topo, pattern, steps, load, seed=offset + seed)
                     cond = {"topology": topo_name, "pattern": pattern, "load": load, "seed": seed}
+                    with_failure = load in exp["failure"]["loads"]
+                    if with_failure:
+                        rng = np.random.default_rng(offset + seed)
+                        link = failure_links[rng.integers(len(failure_links))]
+                        link_name = f"{topo.node_names[link[0]]}-{topo.node_names[link[1]]}"
                     for m, app in apps.items():
                         df = run_episode(topo, app, tm_seq)
                         episodes.append({**cond, "scenario": "normal", "method": m, **df[METRICS].mean()})
-
-                    if load not in exp["failure"]["loads"]:
-                        continue
-                    rng = np.random.default_rng(offset + seed)
-                    link = failure_links[rng.integers(len(failure_links))]
-                    link_name = f"{topo.node_names[link[0]]}-{topo.node_names[link[1]]}"
-                    for m, app in apps.items():
-                        df = run_episode(topo, app, tm_seq, fail_at=fail_step, fail_link=link)
-                        episodes.append({**cond, "scenario": "failure", "method": m, **df[METRICS].mean()})
-                        failure_steps.append(df.assign(**cond, failed_link=link_name, fail_step=fail_step))
+                        if not with_failure:
+                            continue
+                        # Keep the no-failure steps too, so the failure's effect can be
+                        # measured against the same traffic without it.
+                        failed = run_episode(topo, app, tm_seq, fail_at=fail_step, fail_link=link)
+                        episodes.append({**cond, "scenario": "failure", "method": m, **failed[METRICS].mean()})
+                        for scenario, d in (("normal", df), ("failure", failed)):
+                            failure_steps.append(d.assign(**cond, scenario=scenario, failed_link=link_name,
+                                                          fail_step=fail_step))
 
     out_dir.mkdir(parents=True, exist_ok=True)
     episodes_df = pd.DataFrame(episodes)

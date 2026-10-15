@@ -18,5 +18,11 @@
     {"src": "LOSAng", "dst": "SNVAng", "capacity": 9920, "delay": 3.0},
     {"src": "NYCMng", "dst": "WASHng", "capacity": 9920, "delay": 2.0},
     {"src": "SNVAng", "dst": "STTLng", "capacity": 9920, "delay": 7.0}
-  ]
+  ],
+  "positions_note": "Approximate (longitude, latitude) for drawing; ATLAM5 is nudged away from ATLAng for readability.",
+  "positions": {
+    "ATLAM5": [-81.8, 31.6], "ATLAng": [-84.4, 33.7], "CHINng": [-87.6, 41.9], "DNVRng": [-105.0, 39.7],
+    "HSTNng": [-95.4, 29.8], "IPLSng": [-86.2, 39.8], "KSCYng": [-94.6, 39.1], "LOSAng": [-118.2, 34.1],
+    "NYCMng": [-74.0, 40.7], "SNVAng": [-122.0, 37.4], "STTLng": [-122.3, 47.6], "WASHng": [-77.0, 38.9]
+  }
 }

@@ -2,7 +2,7 @@ import pandas as pd
 
 from sdnte.config import load_config
 from sdnte.experiments import run_all
-from sdnte.plots import make_all
+from sdnte.plots import failure_effect, make_all
 
 
 def test_grid_runner_and_plots(tmp_path):
@@ -17,6 +17,10 @@ def test_grid_runner_and_plots(tmp_path):
     assert set(episodes["scenario"]) == {"normal", "failure"}
     failure = pd.read_csv(results / "failure_steps.csv")
     assert set(failure["step"]) == set(range(20))
+    assert set(failure["scenario"]) == {"normal", "failure"}
+    # Before the link fails, the failure run is identical to the no-failure run.
+    effect = failure_effect(failure)
+    assert (effect.loc[effect["step"] < effect["fail_step"], "extra_mlu"].abs() < 1e-9).all()
 
     made = make_all(results, figures)
     assert all(p.exists() for p in made)

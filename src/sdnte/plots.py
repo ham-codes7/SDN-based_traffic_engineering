@@ -112,15 +112,32 @@ def mlu_by_pattern(episodes: pd.DataFrame, out_dir: Path, load: float = 0.9) -> 
     return _save(fig, "mlu_by_pattern", out_dir)
 
 
+def failure_effect(failure_steps: pd.DataFrame) -> pd.DataFrame:
+    """Per-step metrics of each failure run next to the same run without the failure.
+
+    Adds `extra_mlu` and `extra_loss_pct`: how much the failure itself raised MLU and
+    loss for that method on identical traffic (removes the traffic's own variation).
+    """
+    keys = ["topology", "pattern", "load", "seed", "method", "step"]
+    cols = keys + ["mlu", "loss_pct"]
+    normal = failure_steps[failure_steps["scenario"] == "normal"][cols]
+    failed = failure_steps[failure_steps["scenario"] == "failure"]
+    df = failed.merge(normal, on=keys, suffixes=("", "_no_failure"))
+    df["extra_mlu"] = df["mlu"] - df["mlu_no_failure"]
+    df["extra_loss_pct"] = df["loss_pct"] - df["loss_pct_no_failure"]
+    return df
+
+
 def failure_timeline(failure_steps: pd.DataFrame, out_dir: Path, load: float = 0.9) -> Path:
-    df = failure_steps[failure_steps["load"] == load]
+    df = failure_effect(failure_steps)
+    df = df[df["load"] == load]
     methods = _present(df, MAIN_METHODS)
     df = _with_labels(df[df["method"].isin(methods)])
     topos = list(df["topology"].unique())
     fig, axes = plt.subplots(1, len(topos), figsize=(5.2 * len(topos), 3.8), sharey=True, squeeze=False)
     for ax, topo in zip(axes[0], topos):
         d = df[df["topology"] == topo]
-        sns.lineplot(data=d, x="step", y="mlu", hue="Method", hue_order=[_label(m) for m in methods],
+        sns.lineplot(data=d, x="step", y="extra_mlu", hue="Method", hue_order=[_label(m) for m in methods],
                      palette=_palette(methods), errorbar=None, ax=ax, legend=ax is axes[0][0])
         ax.axvline(d["fail_step"].iloc[0], color="#52514e", linestyle="--", linewidth=1)
         ax.text(d["fail_step"].iloc[0] + 0.5, ax.get_ylim()[1] * 0.97, "link failure", va="top",
@@ -128,7 +145,7 @@ def failure_timeline(failure_steps: pd.DataFrame, out_dir: Path, load: float = 0
         ax.set_title(f"{topo.capitalize()}, load {load}")
         ax.set_xlabel("Control interval")
         ax.xaxis.get_major_locator().set_params(integer=True)
-        ax.set_ylabel(METRIC_LABELS["mlu"])
+        ax.set_ylabel("Extra max link utilization\ncaused by the failure")
     _legend_below(fig, axes)
     return _save(fig, "failure_timeline", out_dir)
 
