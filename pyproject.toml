@@ -19,6 +19,7 @@ dependencies = [
     "plotly>=5.20",
     "streamlit>=1.35",
     "tensorboard>=2.16",
+    "tabulate>=0.10.0",
 ]
 
 [project.scripts]

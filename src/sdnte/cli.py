@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from pathlib import Path
 
 import typer
@@ -85,21 +86,25 @@ def train(
             console.print(f"  saved {path.relative_to(REPO_ROOT)}")
 
 
-def _not_yet(what: str, week: str, owner: str) -> None:
-    console.print(f"[yellow]{what} is not implemented yet ({week}, owner {owner}).[/yellow]")
-    raise typer.Exit(1)
-
-
 @app.command("run-all")
-def run_all() -> None:
-    """Run the full experiment grid from configs/default.yaml."""
-    _not_yet("The experiment grid", "week 4", "P3")
+def run_all(quick: bool = typer.Option(False, help="2 seeds, 20-step episodes: checks the pipeline fast")) -> None:
+    """Run the full experiment grid from configs/default.yaml into results/."""
+    from sdnte.config import load_config
+    from sdnte.experiments import run_all as run_grid
+
+    t0 = time.time()
+    episodes = run_grid(load_config(), quick=quick, log=lambda msg: console.print(msg, highlight=False))
+    console.print(f"{len(episodes)} episode results saved to results/ in {time.time() - t0:.0f}s")
 
 
 @app.command()
 def plots() -> None:
-    """Generate report figures from results/ into figures/."""
-    _not_yet("Plotting", "week 4", "P3")
+    """Generate report figures (figures/) and the summary table (results/) from results/."""
+    from sdnte.plots import make_all
+
+    for path in make_all():
+        console.print(f"  {path.relative_to(REPO_ROOT)}")
+    console.print((REPO_ROOT / "results" / "summary_load0.9.md").read_text())
 
 
 if __name__ == "__main__":
