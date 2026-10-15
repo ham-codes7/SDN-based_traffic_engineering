@@ -40,23 +40,36 @@ class Metrics:
         return {k: v for k, v in self.__dict__.items() if k != "link_util"}
 
 
-def link_loads(topo: Topology, routing: Routing, tm: np.ndarray) -> np.ndarray:
-    """Offered load in Mbps on every directed link."""
-    loads = np.zeros(topo.num_links)
+def _flatten(topo: Topology, routing: Routing, tm: np.ndarray):
+    """Routing as flat arrays: flow per path, and (link index, path id) per hop."""
+    flows, hop_links, hop_paths = [], [], []
     for (s, d), splits in routing.items():
         demand = tm[s, d]
         if demand <= 0:
             continue
         for path, frac in splits:
-            np.add.at(loads, topo.path_links(path), demand * frac)
-    return loads
+            idx = topo.path_links(path)
+            hop_paths.extend([len(flows)] * len(idx))
+            hop_links.extend(idx)
+            flows.append(demand * frac)
+    return np.array(flows), np.array(hop_links, dtype=int), np.array(hop_paths, dtype=int)
+
+
+def link_loads(topo: Topology, routing: Routing, tm: np.ndarray) -> np.ndarray:
+    """Offered load in Mbps on every directed link."""
+    flows, hop_links, hop_paths = _flatten(topo, routing, tm)
+    if not len(flows):
+        return np.zeros(topo.num_links)
+    return np.bincount(hop_links, weights=flows[hop_paths], minlength=topo.num_links)
 
 
 def evaluate(topo: Topology, routing: Routing, tm: np.ndarray) -> Metrics:
     """Route traffic matrix `tm` (Mbps, shape N x N) with `routing` and measure it."""
-    loads = link_loads(topo, routing, tm)
+    flows, hop_links, hop_paths = _flatten(topo, routing, tm)
+    n_paths = len(flows)
     caps = topo.capacities
     up = topo.up
+    loads = np.bincount(hop_links, weights=flows[hop_paths], minlength=topo.num_links) if n_paths else np.zeros(topo.num_links)
 
     util = np.where(up, loads / caps, 0.0)
     with np.errstate(divide="ignore", invalid="ignore"):
@@ -70,22 +83,15 @@ def evaluate(topo: Topology, routing: Routing, tm: np.ndarray) -> Metrics:
 
     # Demand for pairs missing from `routing` (unreachable) counts as offered but lost.
     offered = float(tm.sum() - np.trace(tm))
-    delivered = 0.0
-    path_delays, path_flows = [], []
-    for (s, d), splits in routing.items():
-        demand = tm[s, d]
-        if demand <= 0:
-            continue
-        for path, frac in splits:
-            idx = topo.path_links(path)
-            flow = demand * frac
-            delivered += flow * float(np.prod(1.0 - drop[idx]))
-            path_delays.append(link_delay[idx].sum())
-            path_flows.append(flow)
+    # A path delivers its flow times the product of (1 - drop) over its links.
+    log_survive = np.log(np.clip(1.0 - drop[hop_links], 1e-12, 1.0))
+    survive = np.exp(np.bincount(hop_paths, weights=log_survive, minlength=n_paths))
+    delivered = float((flows * survive).sum())
+    path_delays = np.bincount(hop_paths, weights=link_delay[hop_links], minlength=n_paths)
 
-    if path_flows:
-        avg_delay = float(np.average(path_delays, weights=path_flows))
-        delay_std = float(np.sqrt(np.average((np.array(path_delays) - avg_delay) ** 2, weights=path_flows)))
+    if n_paths:
+        avg_delay = float(np.average(path_delays, weights=flows))
+        delay_std = float(np.sqrt(np.average((path_delays - avg_delay) ** 2, weights=flows)))
     else:
         avg_delay = delay_std = 0.0
 

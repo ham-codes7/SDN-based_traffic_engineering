@@ -10,16 +10,22 @@ traffic:
 
 experiments:
   topologies: [abilene, nsfnet]
-  methods: [ospf_hop, ospf_invcap, ecmp, greedy, lp_optimal, ppo, a2c]
+  methods: [ospf_hop, ospf_invcap, ecmp, greedy, lp_optimal, ppo, a2c, ppo_gravity]
   seeds: [0, 1, 2, 3, 4]
-  failure_step: 25          # a random link fails at this step in failure runs
-  generalization:
-    train_pattern: gravity
-    test_patterns: [hotspot, bursty]
+  test_seed_offset: 10000   # test traffic seeds never overlap training episodes
+  failure:
+    step: 25                # a random (non-partitioning) link fails at this step
+    loads: [0.6, 0.9]
 
 training:
-  algos: [ppo, a2c]
-  timesteps: 150000
+  timesteps: 300000
   n_envs: 4
-  reward_loss_weight: 2.0   # alpha in reward = -MLU - alpha * loss_fraction
+  load_range: [0.3, 1.2]    # training loads are sampled uniformly from this range
+  loss_weight: 2.0          # alpha in reward = relative MLU gain - alpha * loss_fraction
   weight_range: [1, 20]     # action in [-1, 1] maps to link weights in this range
+  failure_prob: 0.3         # share of training episodes with a link failure
+  # Trained agents. Each is saved as models/{topology}_{name}.zip
+  agents:
+    ppo: {algo: ppo, patterns: [uniform, gravity, hotspot, bursty]}
+    a2c: {algo: a2c, patterns: [uniform, gravity, hotspot, bursty]}
+    ppo_gravity: {algo: ppo, patterns: [gravity]}   # generalization test: gravity only

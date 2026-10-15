@@ -90,6 +90,18 @@ class Topology:
         self.up[self.link_index[(u, v)]] = False
         self.up[self.link_index[(v, u)]] = False
 
+    def safe_failure_links(self) -> list[tuple[int, int]]:
+        """Undirected links (u < v) whose failure leaves the network connected."""
+        g = self.graph()
+        safe = []
+        for l in self.links:
+            if l.src < l.dst and self.up[self.link_index[(l.src, l.dst)]]:
+                h = g.copy()
+                h.remove_edges_from([(l.src, l.dst), (l.dst, l.src)])
+                if nx.is_strongly_connected(h):
+                    safe.append((l.src, l.dst))
+        return safe
+
     def restore_all(self) -> None:
         self.up[:] = True
 

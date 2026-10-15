@@ -32,7 +32,7 @@ def topologies() -> None:
 @app.command()
 def simulate(
     topo: str = typer.Option("toy6", help=f"Topology: {', '.join(Topology.available())}"),
-    method: str = typer.Option("ospf_hop", help=f"TE method: {', '.join(BASELINES)}"),
+    method: str = typer.Option("ospf_hop", help=f"TE method: {', '.join(BASELINES)}, or a trained agent (ppo, a2c, ppo_gravity)"),
     pattern: str = typer.Option("gravity", help=f"Traffic pattern: {', '.join(PATTERNS)}"),
     load: float = typer.Option(0.6, help="Load relative to hop-count OSPF saturation (1.0 = saturated)"),
     steps: int = typer.Option(20, help="Control intervals in the episode"),
@@ -43,8 +43,8 @@ def simulate(
     topology = Topology.load(topo)
     tm_seq = generate_sequence(topology, pattern, steps, load, seed)
     try:
-        df = run_episode(topology, make_te_app(method), tm_seq)
-    except NotImplementedError as e:
+        df = run_episode(topology, make_te_app(method, topo), tm_seq)
+    except FileNotFoundError as e:
         console.print(f"[red]{e}[/red]")
         raise typer.Exit(1)
 
@@ -66,15 +66,28 @@ def simulate(
     console.print(f"Saved {out.relative_to(REPO_ROOT) if out.is_relative_to(REPO_ROOT) else out}")
 
 
+@app.command()
+def train(
+    topo: list[str] = typer.Option(None, help="Topology (repeatable). Default: experiments.topologies in the config"),
+    agent: list[str] = typer.Option(None, help="Agent from training.agents (repeatable). Default: all"),
+    timesteps: int | None = typer.Option(None, help="Override training.timesteps"),
+    seed: int = typer.Option(0),
+) -> None:
+    """Train DRL TE agents (PPO, A2C, ...) and save them to models/."""
+    from sdnte.agents import train as train_agent
+    from sdnte.config import load_config
+
+    config = load_config()
+    for t in topo or config["experiments"]["topologies"]:
+        for name in agent or list(config["training"]["agents"]):
+            console.print(f"Training [bold]{name}[/bold] on [bold]{t}[/bold] ...")
+            path = train_agent(t, name, config, timesteps=timesteps, seed=seed)
+            console.print(f"  saved {path.relative_to(REPO_ROOT)}")
+
+
 def _not_yet(what: str, week: str, owner: str) -> None:
     console.print(f"[yellow]{what} is not implemented yet ({week}, owner {owner}).[/yellow]")
     raise typer.Exit(1)
-
-
-@app.command()
-def train(topo: str = "abilene", algo: str = "ppo") -> None:
-    """Train a DRL TE agent (PPO or A2C)."""
-    _not_yet("Training", "week 3", "P2")
 
 
 @app.command("run-all")

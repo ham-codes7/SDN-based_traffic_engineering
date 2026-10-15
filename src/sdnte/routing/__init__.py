@@ -9,8 +9,20 @@ from sdnte.routing.optimal import LPOptimal
 BASELINES = {cls.name: cls for cls in (OSPFHop, OSPFInvCap, ECMP, GreedyLeastLoaded, LPOptimal)}
 
 
-def make_te_app(name: str) -> TEApp:
-    """Create a TE app by name. DRL agents ("ppo", "a2c") are added in agents.py."""
-    if name not in BASELINES:
-        raise ValueError(f"Unknown method {name!r}; available: {sorted(BASELINES)}")
-    return BASELINES[name]()
+def available_methods(topology: str) -> list[str]:
+    """Baselines plus every DRL agent trained for this topology."""
+    from sdnte.agents import trained_agents
+
+    return list(BASELINES) + trained_agents(topology)
+
+
+def make_te_app(name: str, topology: str | None = None) -> TEApp:
+    """Create a TE app by name. DRL agents (e.g. "ppo") need the topology they were
+    trained on, since the policy's input/output size depends on it."""
+    if name in BASELINES:
+        return BASELINES[name]()
+    if topology is None:
+        raise ValueError(f"Unknown method {name!r}; baselines: {sorted(BASELINES)}")
+    from sdnte.agents import DRLTEApp
+
+    return DRLTEApp(topology, name)
