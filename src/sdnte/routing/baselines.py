@@ -7,6 +7,7 @@ import numpy as np
 
 from sdnte.controller import NetworkState
 from sdnte.network import Routing
+from sdnte.routing.paths import k_shortest_paths
 from sdnte.topology import Topology
 
 
@@ -52,27 +53,49 @@ class OSPFInvCap:
 
 
 class ECMP:
-    """Equal-cost multipath: split each pair's demand equally over all min-hop paths.
-
-    TODO (P3, week 2): use nx.all_shortest_paths on topo.graph() and give each
-    path a fraction of 1 / number_of_paths.
-    """
+    """Equal-cost multipath: split each pair's demand equally over all min-hop paths."""
 
     name = "ecmp"
 
     def decide(self, state: NetworkState) -> Routing:
-        raise NotImplementedError("ECMP baseline is not implemented yet (week 2, owner P3)")
+        topo = state.topology
+        g = topo.graph()
+        routing: Routing = {}
+        for s, d in topo.od_pairs:
+            if not nx.has_path(g, s, d):
+                continue
+            paths = list(nx.all_shortest_paths(g, s, d))
+            routing[(s, d)] = [(p, 1.0 / len(paths)) for p in paths]
+        return routing
 
 
 class GreedyLeastLoaded:
-    """Adaptive heuristic: route demands largest-first, each on the path that keeps the
-    max utilization along it lowest given the load placed so far.
+    """Adaptive heuristic: place demands largest-first, each on the candidate path
+    whose busiest link would be least utilized given the load placed so far.
 
-    TODO (P3, week 2): candidate paths from nx.shortest_simple_paths (K=3..5);
-    track residual load per link while placing demands.
+    Uses the measured traffic matrix, like the DRL agent, but plans one interval
+    at a time with no learning.
     """
 
     name = "greedy"
 
+    def __init__(self, k: int = 4):
+        self.k = k
+
     def decide(self, state: NetworkState) -> Routing:
-        raise NotImplementedError("Greedy baseline is not implemented yet (week 2, owner P3)")
+        topo, tm = state.topology, state.traffic_matrix
+        candidates = {
+            pair: [(p, topo.path_links(p)) for p in paths]
+            for pair, paths in k_shortest_paths(topo, self.k).items()
+        }
+        loads = np.zeros(topo.num_links)
+        routing: Routing = {}
+        for s, d in sorted(candidates, key=lambda pair: -tm[pair]):
+            demand = tm[s, d]
+            best_path, best_links = min(
+                candidates[(s, d)],
+                key=lambda c: (((loads[c[1]] + demand) / topo.capacities[c[1]]).max(), len(c[1])),
+            )
+            loads[best_links] += demand
+            routing[(s, d)] = [(best_path, 1.0)]
+        return routing
