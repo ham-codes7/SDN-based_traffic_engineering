@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store
+
+# Generated outputs (regenerate with `sdnte run-all` / `sdnte plots`)
+results/*
+figures/*
+models/*
+runs/
+!results/.gitkeep
+!figures/.gitkeep
+!models/.gitkeep

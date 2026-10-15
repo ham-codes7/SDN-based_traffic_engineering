@@ -1,0 +1,15 @@
+{
+  "name": "toy6",
+  "description": "6-switch ring with two low-capacity chords. Hop-count routing pushes A<->D and B<->E traffic onto the 40 Mbps chords, so it congests early. Used for debugging and demos.",
+  "nodes": ["A", "B", "C", "D", "E", "F"],
+  "links": [
+    {"src": "A", "dst": "B", "capacity": 100, "delay": 2.0},
+    {"src": "B", "dst": "C", "capacity": 100, "delay": 2.0},
+    {"src": "C", "dst": "D", "capacity": 100, "delay": 2.0},
+    {"src": "D", "dst": "E", "capacity": 100, "delay": 2.0},
+    {"src": "E", "dst": "F", "capacity": 100, "delay": 2.0},
+    {"src": "F", "dst": "A", "capacity": 100, "delay": 2.0},
+    {"src": "A", "dst": "D", "capacity": 40, "delay": 3.0},
+    {"src": "B", "dst": "E", "capacity": 40, "delay": 3.0}
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "name": "abilene",
+  "description": "Abilene (Internet2) backbone, 12 PoPs / 15 links, structure and capacities from SNDlib. Capacities in Mbps; propagation delays in ms are approximate.",
+  "nodes": ["ATLAM5", "ATLAng", "CHINng", "DNVRng", "HSTNng", "IPLSng", "KSCYng", "LOSAng", "NYCMng", "SNVAng", "STTLng", "WASHng"],
+  "links": [
+    {"src": "ATLAM5", "dst": "ATLAng", "capacity": 2480, "delay": 0.1},
+    {"src": "ATLAng", "dst": "HSTNng", "capacity": 9920, "delay": 7.0},
+    {"src": "ATLAng", "dst": "IPLSng", "capacity": 9920, "delay": 4.5},
+    {"src": "ATLAng", "dst": "WASHng", "capacity": 9920, "delay": 5.5},
+    {"src": "CHINng", "dst": "IPLSng", "capacity": 9920, "delay": 1.5},
+    {"src": "CHINng", "dst": "NYCMng", "capacity": 9920, "delay": 7.0},
+    {"src": "DNVRng", "dst": "KSCYng", "capacity": 9920, "delay": 5.0},
+    {"src": "DNVRng", "dst": "SNVAng", "capacity": 9920, "delay": 8.5},
+    {"src": "DNVRng", "dst": "STTLng", "capacity": 9920, "delay": 10.0},
+    {"src": "HSTNng", "dst": "KSCYng", "capacity": 9920, "delay": 6.0},
+    {"src": "HSTNng", "dst": "LOSAng", "capacity": 9920, "delay": 12.0},
+    {"src": "IPLSng", "dst": "KSCYng", "capacity": 9920, "delay": 4.5},
+    {"src": "LOSAng", "dst": "SNVAng", "capacity": 9920, "delay": 3.0},
+    {"src": "NYCMng", "dst": "WASHng", "capacity": 9920, "delay": 2.0},
+    {"src": "SNVAng", "dst": "STTLng", "capacity": 9920, "delay": 7.0}
+  ]
+}

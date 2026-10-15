@@ -1,0 +1,25 @@
+# Shared experiment configuration.
+seed: 0
+episode_steps: 50
+
+traffic:
+  # load = 1.0 means the time-averaged traffic matrix, routed by hop-count
+  # shortest paths, exactly saturates the busiest link.
+  patterns: [uniform, gravity, hotspot, bursty]
+  loads: [0.3, 0.6, 0.9, 1.1]
+
+experiments:
+  topologies: [abilene, nsfnet]
+  methods: [ospf_hop, ospf_invcap, ecmp, greedy, lp_optimal, ppo, a2c]
+  seeds: [0, 1, 2, 3, 4]
+  failure_step: 25          # a random link fails at this step in failure runs
+  generalization:
+    train_pattern: gravity
+    test_patterns: [hotspot, bursty]
+
+training:
+  algos: [ppo, a2c]
+  timesteps: 150000
+  n_envs: 4
+  reward_loss_weight: 2.0   # alpha in reward = -MLU - alpha * loss_fraction
+  weight_range: [1, 20]     # action in [-1, 1] maps to link weights in this range

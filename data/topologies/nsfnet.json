@@ -1,0 +1,28 @@
+{
+  "name": "nsfnet",
+  "description": "14-node / 21-link NSFNet-style backbone commonly used in routing research. Uniform 10 Gbps capacities; propagation delays in ms are approximate.",
+  "nodes": ["N0", "N1", "N2", "N3", "N4", "N5", "N6", "N7", "N8", "N9", "N10", "N11", "N12", "N13"],
+  "links": [
+    {"src": "N0", "dst": "N1", "capacity": 10000, "delay": 6.0},
+    {"src": "N0", "dst": "N2", "capacity": 10000, "delay": 9.0},
+    {"src": "N0", "dst": "N7", "capacity": 10000, "delay": 24.0},
+    {"src": "N1", "dst": "N2", "capacity": 10000, "delay": 3.0},
+    {"src": "N1", "dst": "N3", "capacity": 10000, "delay": 6.0},
+    {"src": "N2", "dst": "N5", "capacity": 10000, "delay": 12.0},
+    {"src": "N3", "dst": "N4", "capacity": 10000, "delay": 4.5},
+    {"src": "N3", "dst": "N10", "capacity": 10000, "delay": 21.0},
+    {"src": "N4", "dst": "N5", "capacity": 10000, "delay": 7.5},
+    {"src": "N4", "dst": "N6", "capacity": 10000, "delay": 6.0},
+    {"src": "N5", "dst": "N9", "capacity": 10000, "delay": 10.5},
+    {"src": "N5", "dst": "N12", "capacity": 10000, "delay": 18.0},
+    {"src": "N6", "dst": "N7", "capacity": 10000, "delay": 4.5},
+    {"src": "N7", "dst": "N8", "capacity": 10000, "delay": 4.5},
+    {"src": "N8", "dst": "N9", "capacity": 10000, "delay": 4.5},
+    {"src": "N8", "dst": "N11", "capacity": 10000, "delay": 3.0},
+    {"src": "N8", "dst": "N13", "capacity": 10000, "delay": 3.0},
+    {"src": "N10", "dst": "N11", "capacity": 10000, "delay": 6.0},
+    {"src": "N10", "dst": "N13", "capacity": 10000, "delay": 9.0},
+    {"src": "N11", "dst": "N12", "capacity": 10000, "delay": 4.5},
+    {"src": "N12", "dst": "N13", "capacity": 10000, "delay": 1.5}
+  ]
+}
